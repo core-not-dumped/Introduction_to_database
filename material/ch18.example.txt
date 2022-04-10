@@ -1,0 +1,104 @@
+-- Copyright(c) SKKU VLDB Lab. & SOS 2005. All Rights Reserved.
+-- Ch 18. example.sql
+
+-- Check Oracle Redo Log Group: Log Writer will write "redo log data"
+-- in log groups; redo log data is used for recovery purpose 
+
+conn / as sysdba
+COLUMN table_name FORMAT a15
+COLUMN tablespace_name FORMAT a15
+COLUMN file_name FORMAT a60
+COLUMN member FORMAT a60
+
+show parameter log_buffer;
+
+SELECT * FROM V$LOG; 
+SELECT * FROM V$LOGFILE; 
+SELECT a.group#, a.status, b.type, b.member 
+FROM v$log a, v$logfile b 
+WHERE a.group#=b.group#(+);
+-- NOTE: THE FOLLOWING SWITCH COMMAND "may not" run normally in Oracle VM.
+ALTER SYSTEM SWITCH LOGFILE;
+-- The following two commands are just examples. Do not execute them. 
+-- ALTER DATABASE DROP LOGFILE group 3; 
+-- ALTER DATABASE ADD LOGFILE group 3 ('/data/orasys/redo03.log') SIZE 100M;
+
+conn scott/tiger 
+
+drop table account;
+create table account (id number, balance number);
+
+insert into account values (1, 1000);
+insert into account values (2, 2000);
+commit;
+
+-- Money transfer from Account 1 to Account 2 by 100$
+-- implit transaction start 
+update account set balance = balance - 100 where id = 1; 
+update account set balance = balance + 100 where id = 2; 
+commit; -- or rollback; 
+
+-- what if the system fails or crash before commit? what if this transaction rollbacks or is selected as victim for deadlock resolution? 
+-- Despite any kind of failure prior to the successful commit, the ATOMICITY of this money transfer transaction (i.e., nothing) has to be guaranteed. 
+-- After the transaction has successfuly committed, its DURABILITY and ATOMICITY (i.e., all) of this transaction has to be guranteed even upon any failure.
+
+--------------------------
+-- LOG  COMMIT OVERHEAD --
+--------------------------
+
+-- Oracle Database reference: https://docs.oracle.com/en/database/oracle/oracle-database/19/refrn/COMMIT_WAIT.html#GUID-40E51330-96D0-4B98-BBF3-6A45D970AAB1
+
+conn / as sysdba;
+show parameter commit;
+-- See this for more details on on Commit_Write: https://oracle-base.com/articles/10g/commit-10gr2 
+
+conn scott/tiger;
+
+set timing on;
+
+drop table account;
+create table account (id number, balance number);
+
+BEGIN
+    FOR i IN 1..10000 LOOP
+         INSERT INTO account (id, balance ) values (i, i*10); 
+    END LOOP;
+    COMMIT;
+END;
+/
+
+BEGIN
+    FOR i IN 1..10000 LOOP
+         INSERT INTO account (id, balance ) values (i, i*10); 
+         COMMIT; 
+    END LOOP;
+END;
+/
+
+Alter session set commit_write = 'immediate, wait';
+
+BEGIN
+    FOR i IN 1..10000 LOOP
+         INSERT INTO account (id, balance ) values (i, i*10); 
+         COMMIT; 
+    END LOOP;
+END;
+/
+
+-- OVERHEAD of FSync upon Commits                                              
+-- NOTE: Disable Disk Write Caching in Windows OS 
+-- https://www.windowscentral.com/how-manage-disk-write-caching-external-storage-windows-10
+-- Note: this example should work properly in Linux, but might not work in Windows as intended. 
+
+BEGIN
+    FOR i IN 1..10000 LOOP
+         INSERT INTO account (id, balance ) values (i, i*10); 
+         COMMIT; 
+    END LOOP;
+END;
+/
+
+drop table account; 
+
+-- set autocommit on;
+-- set autocommit 1; /* https://asktom.oracle.com/pls/apex/f?p=100:11:0%3A%3A%3A%3AP11_QUESTION_ID:314816776423*/ 

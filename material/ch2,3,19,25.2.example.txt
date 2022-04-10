@@ -1,0 +1,78 @@
+-- Copyright(c) SKKU VLDB Lab. & SOS 2005. All Rights Reserved.
+-- Ch 2,3,19,25.2 example.sql
+
+-----------
+-- Ch 19 --
+-----------
+
+-- Design 1
+SELECT * FROM EMP;
+SELECT * FROM DEPT;
+
+-- Design 2
+Create table EMP_DEPT
+AS 
+SELECT *
+FROM EMP natural join DEPT;
+
+-- What problems in Design 2 ?
+-- 1. space redundancy 
+-- 2. update anomaly
+-- 3. deletion anomaly or inability to represent information: 
+--    e.g. deptno = 40, no emp. belonging to 40 (NULL, NULL, NULL, ..., 40, ..)
+--    e.g. what if all emps of deptno 10 is deleted?
+-- 4. insertion anomaly: we know that a new emp of dept 50, but do not know its name and location.   
+
+-- Design 1 >> Design 2 (better design)
+
+-- What benefit with Design 2 ?
+
+-- Design 2 --> Design 1: Decomposition or Normalization
+
+-- Functional dependencies: E# -> D#, D# -> LOC (a set of constraints given by users)
+-- Can we say E# -> Loc?
+-- In Design 1, E# determines every column values in EMP and 
+-- D# does every other columns in DEPT. --> role of PK in a relation!!
+
+-- What problems in decompostion? 1) information loss, 2) no depedency preservation, 3) performance 
+
+-- Goals of decomposing one big relation R into several small relations R1, ... , Rn: 
+--  1) no information loss, 2) dependency presevation 
+
+-- Example of information loss:
+-- EMP(EMPNO, ENAME, JOB, MGR, HIREDATE, SAL, COMM, DEPTNO) 
+-- ==> EMP1 (EMPNO, ENAME, JOB, MGR, DEPTNO): select * from emp; 
+-- ==> EMP2 (DEPTNO, HIREDATE, SAL, COMM): select ... from emp; l  
+-- EMP != ( SELECT * FROM (SELECT empno, ename, job, mgr, deptno FROM emp) emp1 
+-- 		          NATURAL JOIN
+-- 			  (SELECT deptno, hiredate, sal, comm FROM emp) emp2;
+
+-- Decomposition of R is based on the theory of functional dependency(FD). 
+-- Good schema: BCNF, 3NF
+-- R with a set of FDs (given by DB designers) 
+-- BCNF: There is a decomposition algorithm which always losslessly decomposes R into BCNF schema, 
+--       but might not preserve dependency 
+-- 3NF: There is a decomposition algorithm which decomposes R into 3NF in both lossless and 
+--       dependency preserving way. 
+
+-- {E# -> D#, D# -> LOC} ==> {E# -> D#}, {D# -> LOC} 
+-- This decomposition is both loss-less and dependency preserving.
+-- Why loss-less?  D# is the key of DEPT table.
+-- Why dependency preserving? { {E# -> D#, D# -> LOC}+ ==> { {E# -> D#} U {D# -> LOC} }+
+
+-- Both of Desing 1 and Design 2 are in 1NF. (atomic field value)
+-- Design 2 has transitive dependency: violation of 3NF 
+-- Design 2 is in 2NF: no partial dependency
+-- Design 1 is in BCNF: no transitive dependency (CASE1 and CASE2 in Fig. 19.8) 
+
+-------------------------------------------------------
+- Ch 25.2 star join example                           -
+- (refer to the star schema in lecture note: page 48) -
+-------------------------------------------------------
+
+select p.prod_name, t.time_id, c.cust_city, sum(amount_sold), count(*)
+from sales s, products p, times t, customers c
+where s.prod_id = p.prod_id and s.time_id = t.time_id and s.cust_id = c.cust_id and 
+      t.day_number_in_week = 1 and c.country_id = 52774 and p.prod_category = 'Photo' 
+group by p.prod_name, t.time_id, c.cust_city
+

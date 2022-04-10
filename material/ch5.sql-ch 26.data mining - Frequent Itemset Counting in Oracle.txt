@@ -1,0 +1,105 @@
+-- Copyright(c) SKKU VLDB Lab. 2016 . All Rights Reserved.
+-- Ch 26. example.sql
+
+-- In this script, the sample "SALES HISTORY" schema is used.
+-- Thus, you need to install the schema and activate SH account.
+
+-- (prior to Oracle 12c)
+-- WINDOWS 
+-- sqlplus / as sysdba;
+-- ALTER USER sh IDENTIFIED BY sh ACCOUNT UNLOCK;
+-- GRANT CONNECT, RESOURCE to sh;
+
+-- Since 12c 
+-- Refer to the attached "SH schema installation guide" file,
+-- which is based on "http://www.rebellionrider.com/how-to-unlock-sh-schema-in-oracle-database/"
+
+--------------------------------------------------------------------
+-- To install full sample schemas provided by Oracle,
+-- please refer to this site:
+-- https://docs.oracle.com/en/database/oracle/oracle-database/19/comsc/installing-sample-schemas.html#GUID-A2C3DC59-CDA1-47C0-BA6B-F6EA6395A85F 
+--------------------------------------------------------------------
+
+-- Once SH schema is installed and SH account is activated. 
+conn sh/sh;
+
+-- Check the schema of sales and products tables
+desc sales;
+desc products;
+
+select prod_name from products; /* 72 products */ 
+
+select avg(cnt)                 /* 130 products were on average bought per customer */ 
+from (select cust_id, count(*) cnt
+      from sales
+      group by cust_id);
+
+-------------------------------------------------------------------------
+-- DBMS_FREQUENT_ITEMSET packages:                                     --
+-- (Refer to "Database PL/SQL Packages and Types Reference (12c)"      --
+-- http://docs.oracle.com/database/121/ARPLS/d_frqist.htm#ARPLS66411   --
+-------------------------------------------------------------------------
+-- DBMS_FREQUENT_ITEMSET.FI_TRANSACTIONAL (                            --
+--	tranx_cursor		IN	SYSREFCURSOR,                  --
+--	support_threshold	IN	NUMBER,                        --
+--	itemset_length_min	IN	NUMBER,                        --
+--	itemset_length_max	IN	NUMBER,                        --
+--	including_items		IN	SYS_REFCURSOR DEFAULT NULL,    --
+--	excluding_items		IN	SYS_REFCURSOR DEFAULT NULL)    -- 
+--                                                                     --
+-- RETURN TABLE OF ROW (                                               --
+--      itemset [Nested Table of Item Type DERIVED FROM tranx_cursor], --
+--	support		NUMBER,					       --
+--	length		NUMBER,					       --
+--	total_tranx	NUMBER);				       --
+-------------------------------------------------------------------------
+
+-- define type for frequent itemsets -- in case of "NUMBER-typed" items
+create or replace type fi_num as table of number; 
+/
+
+-- Assume that SALES (cust_id, prod_id) as transactional databases 
+select count(distinct cust_id) from sales; -- # of transactions: 7059
+
+-- declare column format in SQL*Plus 
+set linesize 100;
+COLUMN ITEMSET FORMAT A40;
+
+select cast(itemset as fi_num) itemset, support,length,total_tranx
+from table(dbms_frequent_itemset.fi_transactional(
+               cursor(select cust_id, prod_id
+                      from sales),
+               (5000/7059),
+	       2,
+	       5,
+	       null,
+	       null)
+	)
+/
+
+-- define type for frequent itemsets -- in case of "STRING-typed" items
+create or replace type fi_char as table of varchar2(100); 
+/
+
+set lines 200
+COLUMN ITEMSET FORMAT A120; 
+COLUMN SUPPORT FORMAT 9,999,999;
+COLUMN "LENGTH" FORMAT 999,999;
+COLUMN total_tranx FORMAT 999,999;
+
+select cast(itemset as fi_char) itemset, support,length,total_tranx
+from table(dbms_frequent_itemset.fi_transactional(
+               cursor(select s.cust_id, p.prod_name
+                      from sales s, products p
+		      where s.prod_id = p.prod_id),
+               (5000/7059),
+	       2,
+	       5,
+	       null,
+	       null)
+	)
+/
+
+
+-- For instance, chanage 5000/7059 with 4000/7059
+

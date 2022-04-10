@@ -1,0 +1,814 @@
+1. DB사용: OLTP, OLAP, data warehouse, data mining, web log analysis
+
+
+2. database tuning이 중요한 이유(business)
+- improve your productivity
+- increase your profit
+- increase ROI(return on investment)
+
+
+3. 왜 써야하는가
+More data: 무어법칙
+More uses: 사용자 증가
+More complex query: OLAP, mining query
+Fast responses
+
+
+4. 연관되어 있는 데이터의 집합
+
+
+5. enterprise
+entities: students, courses. instructor
+relationships: entities 사이의 관계
+
+
+6. files vs DBMS
+- large dataset은 main main memory and secondary storage에 저장되고 실행된다.
+- Special codes for different queries
+file에 있는 data를 사용하기 위해서는 특별한 code를 작성해야된다.
+- Concurrency control & crash recovery
+- Security and access control: flexible security policy
+
+
+7. 왜 DBMS를 사용하나? file system에 비해 가치는?
+- Data independence
+- Efficient data access
+쿼리를 자동으로 optimize해준다.
+- Data integrity and security
+무결성이나 보안
+- Concurrency access, crash recovery
+- 개발 시간이 줄어들어 생산성이 높아진다.
+
+
+8. data models
+Data model: collection of high-level concepts for describing data
+hides many low-level storage details.
+schema: description of a particular collection of data, using given data model
+scott data의 schema는 emp 와 dept
+
+
+9. Relational data model
+schema: relation name, attribute and its type으로 이루어짐
+relation instance: a set of records(rows, tuples)
+integrity constraints: ex) 10<age 40인것만 들어오게 함
+
+
+10. levels of abstraction(view, schema들)
+data definition language(DDL): 
+데이터베이스를 정의하는 언어이며, 데이터리를 생성, 수정, 삭제하는 등의 데이터의 전체의 골격을 결정하는 언어
+
+- external schemas: how users see the datas
+ex) Course_info(cid:string, enrollment:integer)
+ex) DDL: Create view...
+
+- conceptual(logical) schema:
+define logical structure
+describe the stored data in terms of data models
+ex) Courses(cid:string, cname:string, credits:Integer)
+ex) DDL: Create table...
+Logical data independene: logical schema가  바뀌어도 external schema에 영향을 미치지 않는다.
+(Protection from changes in logical structure of data, 정의만 바꾸면 그대로 동작한다.)
+
+- Physical schema
+describes indexes
+secondary storage에 실제로 어디에 존재하는지
+여러 파일로 쪼개져 있다던지
+물리적으로 어떻게 저장되어있는지 
+ex) DDL: Create index ...(자주 사용하는 쿼리를 저장해둔다.)
+Pysical data independence: pysical schema가 바뀌어도 conceptual schema, external schema에 영향을 미치지 않는다.
+(Protection from changes in physical structure of data)
+
+
+11. queries in a DBMS
+유저가 원하는 데이터가 뭔지 표현해 주는 것(select from where)
+Query language: "WHAT"
+data를 뽑아오는것은 embedding되어있고 다른 복잡한 연산들은 c에서 해준다.
+
+
+12. Transactions -> 거래
+Four properties of Transaction: ACID
+- Atomicity(all or nothing property) -> log properties를 사용하여 updata에 대한 모든 정보를 저장한다.)
+transaction(begin...commit까지)이 완벽히 끝났거나
+아예 시작도 되지 않았을 때의 상태를 보장해줘야된다.
+- Consistency: 언제나 일관성 있는 데이터베이스 상태로 유지하는 것을 의미한다.
+모든 계좌는 잔고가 있어야 한다면 이를 위반하는 트랜잭션은 중단된다.
+- Isolation
+lock기반으로 데이터를 제어한다. transaction이 동시에 같은 값을 바꾸려고 할때의 문제를 회피한다.
+- Durability:지속성, 성공적으로 수행된 트랜잭션은 영원히 반영되어야 함을 의미한다.
+
+
+13. Concurrency Control
+concurrency: transaction을 구성하는 각각의 쿼리문들이 transaction의 순서에 상관없이 동시에 실행되는 것을 의미한다.
+효과적으로 control하는게 필요하다.
+
+
+14. Declarative interface: what they want, not how to do it <- 선언적 인터페이스
+Transactions: Concurrency models for multiple users, clear interactions with failure recovery
+
+
+15. Data Model
+Structure: Structural Part: DDL (data definition Language) -> table view index
+Operations: Manipulative Part: DML (Data Manipulation(조종) Language) -> insert update delete query
+Constraints: Integrity Part: DCL (Data Control Language) -> trigger, advanced IC, security, transactoin management
+
+
+16. relational database: a set of relations
+a relations: a set of rows or tuples(중복허용x)
+schema(relation name + name and type of each column)
+instance(a table, with rows and columns)
+
+
+17.
+schema: Students(sid: string, name:string...)
+fields = columns, 개수 -> degree
+tuples = records = rows, 개수 -> cardinality
+column은 key column만 distinct해야된다.
+domain constraints: table에 row가 들어올 때 type을 확인해서 다르면 error를 띄운다.
+
+
+18, why call relational, no tabular?
+order of tuples and order of columns do not matter
+
+
+19. creating realtions in SQL - DDL
+table, view, index
+create table students
+(sid: char(20),
+ name: char(20),
+ login: char(10),
+ age: integer,
+ gpa: real)
+
+
+20. Modifying realtions - DML
+- insert a new tuple into a table
+insert into students (sid, name, login, age, gpa)
+	values (12342, 'Smith', 'smith@ee', 14, 3.2)
+
+- delete all tuples satisfying some condition
+delete
+from students s
+where s.name = 'smith';
+
+- update a relation
+update students s
+set s.gpa = s.gpa - 0.1
+where s.gpa >= 3.3;
+
+- query relations
+select *
+from students s
+where s.gpa >= 3.3;
+
+결과도 set으로 나온다.(set oriented semantics)
+
+
+21. integrity constraints(ICs). 무결성
+IC: database 내부의 instance가 모두 만족해야되는 condition
+domain constraint, primary/foreign key constraint + 사용자 지정..
+
+database models는 실생활 기반으로 만들어지기 때문에
+실생활에서 이루어질 수 없는 것들을 entities나 relationships가 가지면 안된다.
+(ex)bank account 는 minus balance를 가질 수 없다.)
+
+- specified when schema is defined by users
+- stored/managed by DBMS
+- Check when realtions are modified
+- Error will be returned when an update violates any ICs.
+
+
+22. primary keys and entity integrity(primary key중복값 허용x, null허용)
+Index가 자동적으로 primary key에 대하여 만들어진다.
+
+다음과 같이 2개를 쓰면 2개의 조합이 하나만 있어야 한다는 의미이다,
+create table enrolled
+(sid char(20),
+ cid char(20),
+ grade char(2),
+ primary key (sid, cid))
+sid char(20)뒤에 primary key라고 써도 됨(위와 의미는 다름)
+
+candidate keys(가짜키, 중복 허용x)(specified using unique)
+create table enrolled
+(sid char(20),
+ cid char(20),
+ grade char(2),
+ primary key (sid),
+ unique(cid))
+
+constraint a primary key(a_tmp)
+-> index를 a로 이름을 바꿔서 설정
+
+
+23. foreign keys & referential integrity, 참조 무결성
+항상 primary key를 참조해야된다(logical pointer)(value based relationship)
+(my sql은 unique도 가능)
+no dangling references
+
+CREATE TABLE Enrolled(
+sidCHAR(20),
+cidCHAR(20), 
+grade CHAR(2),
+PRIMARY KEY  (sid,cid),
+FOREIGN KEY(sid) REFERENCES Students)
+
+참조받는 테이블 child table
+참조하는 테이블 parent table
+
+24. enforcing referential integrity
+parent table에서의 primary key delete(primary key update허용x)
+1. CASCADE: child table에서 참조하고 있는 모든 tuple을 지운다.
+2. NO ACTION: 못지우게 한다.
+3. SET NULL: child table에서 tuple을 지우지 않고 NULL로 세팅한다.
+->forign key가 null값을 같는 것은 허용된다.
+FOREIGN KEY (sid) REFERENCES Students 
+ON DELETE CASCADE
+ON UPDATE SET DEFAULT)
+default는 no action(delete)
+
+
+25. IMMEDIATE, DEFERRED
+- immediate mode(default)
+checked at the end of a SQL statement(바로)
+- deferred momde(child먼저하고 parent바꿀때)
+checked at transaction commit time
+
+
+26.
+select ename, empno from emp order by ename;
+select ename, empno from emp order by 1;
+
+select 1 from emp; -- in the select clause, '1' does not mean 1st column. 
+tupe 대신에 1이라는 값을 return 하라라는 의미
+
+
+27. querying single relation
+select * (모든 칼럼)
+from students s
+where s.age=18;
+
+select s.name, s.login (2개 칼럼)
+...
+
+
+28. querying multiple relations
+select s.name, e.cid
+from students s, enrolled e
+where s.sid=e.sid and e.grade="A"
+
+input: relation(s)
+output: relation
+
+
+29. views
+a view is just a relation, but we store just a definition(정의만 저장)
+(virtual relation)
+create view highscorestudents(sid, gpa)
+	as select s.sid, s.gpa
+	    from students s
+	    where s.gpa >3.5
+
+select s.sid
+from highstudents s
+-> base relation으로 변환해서 구한다.
+select s.sid
+from students s
+where s.gpa >3.5; ->로 바뀐다.
+
+- view and security
+가공되어져 보이기때문에 중요한 정보를 숨길 수 있다.
+
+- 모든 뷰가 업데이트 가능한 건 아니다.
+여러개의 테이블을 참조하는 view는 바꿀수 없고
+single 테이블을 참조하는 view는 바꿀 수 있다.
+하지만 view의 내용이 바뀌는 것이 아니라, 참조하는 table의 값이 바뀐다.
+(view는 데이터를 저장하지 않으므로)
+
+
+- destroying and altering relations -> schema change/evolution
+drop table students
+-> destroys the relation students, both schema and instance
+alter table students add column firstyear: integer
+
+
+30. Codd's theorem
+relational algebra
+tuple relational calculus
+domain relational calculus -> 서로 변환 가능하다
+
+relational algebra로 내부적으로 처리한다.
+SQL itself is based on the relational calculus.(TRC)
+
+relational algebra(RA): (internal execution plans)
+relational calculus(RC): how, non-operational, declarative
+
+
+31. 
+operands: relations
+operator: most common things(5가지)
+closeness: result of any relational operator is another relation
+
+32. preliminaries -> closeness
+
+
+33. 기본연산자: selection, projection, cross-product, set-difference, union
+additional operations: intersection, join, division, renaming, aggregation(있으면 편함)
+R-(R-S) -> intersection(기본 연산자로 표현 가능하다.)
+returns relation, 
+
+
+34. projection: 파이: delete attributes that are not in projection list(리스트에 없으면 column삭제한다.)
+-> 중복될 수 있다. 원래 제안은 중복 허용하지 않음
+
+
+35. selection: 시그마
+selects rows that satisfy selection condition
+-> 중복될 수 없다.
+
+
+37. union
+union compatible해야함, field개수와 type같아야함
+중복제거
+
+
+38. cross product
+each row of S1 is paired with each row of R1
+naming conflict: column 이름이 동일할 경우가 있음
+
+
+39. join
+condition join(theta join): 조건을 보고 cross product에서 골라낸다.
+Equi-join: column이름이 같을 경우 join한다.(column한개만 표현됨)
+naturla join: equi-join on all common fields
+
+cross product: 좌표평면
+join: 함수 만들기
+
+
+40. set, bag semantics
+- relational algebra vs sql
+set vs multi-set semantics
+by default, sql takes bag semantics
+distinct키워드로 set으로 바꿀 수 있다.
+
+
+41. division
+A/B 
+pixA - pix((pix(A)XB)-A)
+
+
+42. select할때 distinct를 쓸 때 primary key가 포함되면, unique해쉬를 참고하지 않는다.
+
+
+43. selection then projection
+
+
+44. union all 중복 허용
+minus, intersect도 union으로 비슷하게 사용가능하다.
+
+
+45. R divide by S
+select distinct x.a
+from r x
+where not exists(select *
+	         from s y
+                     where not exists(select *
+			      from r z
+			      where (z.a=x.a) and (z.b=y.b)));
+
+
+46. sql expressive powers
+- relational algebra or calculus
+- aggregation / grouping
+- deductive logics / analytic functions(windowing)
+- data mining features
+- machine learning
+
+
+47. basic sql query(relational algebra or calculus)
+select target-list(attributes of relations in relation-list)
+from relation-list(a lilst of relation names, range(or tuple) variable
+where qualification, 제한(comparisons (attr 1 or attr2) combined using logical connectives (or))
+
+(1)cross-product -> from
+(2)discard resulting tuples if they fail qualifications -> where
+(3)delete attributes that are not in target-list -> select
+(4)if distinct is specified, eliminate duplicate rows
+
+
+48. join = existential quantifier(존재하는지 여부도 알 수 있다.)
+
+
+49. expressions and strings
+select s.age, age1=s.age-5, 2*s.age as age2
+from sailors s
+where s.name like 'B_%B' <- 양쪽이 B이고 가운데 뭐가 들어갈지 모름 (_는 한글자)
+
+
+50. union, intersect, except
+- union, union all
+- intersect, intersect all
+- except(or minus)
+- in, any, all, exists
+
+
+51. nested queries
+SELECT  S.sname
+FROM  Sailors S
+WHERE  S.sid IN(SELECT  R.sid
+	         FROM  Reserves R
+	         WHERE  R.bid=103)
+
+
+52. nested queries with correlation(한 tuple에 대해 subquery를 다 돌려봐야한다.)
+true 나 false를 return하는 함수이다.
+SELECT  S.sname
+FROM  Sailors S
+WHERE EXISTS  (SELECT  *
+	         FROM  Reserves R
+	         WHERE  R.bid=103 AND S.sid=R.sid)
+
+
+53. comparison operators
+any:한개만 만족해도 ok, all:모두 만족해야된다.
+SELECT  *
+FROM  Sailors S
+WHERE  S.rating> ANY(SELECT  S2.rating
+		     FROM  Sailors S2
+		     WHERE S2.sname=‘Horatio’)
+<- subquery값이 비면 항상 false값을 출력하여 아무것도 안나온다.
+all 이면 항상 true가되어서 모든값이 출력된다.
+
+
+54. outer join: join했을때 null값이어도 출력한다.
+select dname, max(sal)
+from emp e, dept d
+where e.deptno(+) = d.deptno
+group by dname;
++의 위치는 join시킬 값이 없는 곳에 위치한다.
+
+55. aggregate operators(aggregation/grouping)
+count sum avg max min
+-> cannot be nested(but oracle allow)
+
+56. group by and having
+group by 대신 for문쓰면 안좋은점
+반복해야 한다 -> 효율x. 몇개인지 알 수 없는 경우가 많다.
+
+SELECT [DISTINCT]  target-list
+FROM relation-list
+WHERE qualification
+GROUP BY grouping-list
+HAVING group-qualification
+-> target-list attribute는 grouping-list의 subset이다.
+
+from -> where -> group by -> having -> select
+
+group by: 
+SELECT  S.rating,  AVG (S.age)
+FROM  Sailors S
+GROUP BY S.rating
+
+with: 임의로 table생성해서 사용한다.
+WITH Temp AS (SELECT S.rating, avg(S.sal) as avgsal
+	         FROM  Sailors S
+	         GROUP BY S.rating )
+
+
+57. null values
+unknown(rating has not been assigned)
+inapplicable(no spouse's name)
+
+- is null, is not null로 체크함, true false return한다.
+- nvl(attr, const) null value인지 확인해서 null value를 const로 setting해준다.
+
+rating이 null일 경우에 rating > 8을 실행할 경우 진리값이 unknown이된다.
+Null = Null -> U
+Not(U) -> U
+T or U = T
+F or U = U
+F and xx = F
+U and (T or U) = U
+
+- where에서 false와 unknown은 discard된다.
+- +,-,..은 null 값을 가질경우 null값을 return된다.
+- count(*)은 null은 counting하지만, 나머지는 다 무시한다.
+(count(attr)도 무시)
+null값만 있을 때에는 null이 나온다.
+
+- sname char(20) not null -> null 허용x로 선언
+- implicit not null in primary key constraint
+- unique는 nullable하다
+
+- in & not in
+in == exists
+not in != not exists
+
+
+58. general constraints
+- per tuple check
+CHECK( rating >= 1 AND rating <= 10 )
+- intra or inter table check
+CHECK(`Interlake’<>
+	( SELECT  B.bname
+	  FROM  Boats B
+	  WHERE  B.bid=bid))
+
+
+59. assertions: IC over multiple relations
+- 다음과 같이 쿼리를 구성하면 sailors table이 업데이트 될때만 확인한다.
+CREATE TABLE Sailors(
+	sid  INTEGER,
+	sname  CHAR(10),
+	rating  INTEGER,
+	age  REAL,PRIMARY KEY  (sid),
+	CHECK  ( (SELECT COUNT (S.sid) FROM Sailors S)
+	+ (SELECT COUNT (B.bid) FROM Boats B) < 100 )
+
+- not associated with either table
+CREATE ASSERTION smallClubCHECK  (
+	(SELECT COUNT (S.sid) FROM Sailors S)
+	+ (SELECT COUNT (B.bid) FROM Boats B) < 100 )
+
+
+60. triggers -> 지원하면 active database
+자동적으로 실행되게 한다.
+ECA rule
+Event(activates the trigger)
+Condition(tests whether the triggers should run)
+Action(what happens if the trigger runs)
+
+- provide sophisticated auditing(복잡한 변경)
+- prevent invalid transactions
+- 복잡한 룰을 적용 가능하다.
+- enforcing referential integrity 구현 가능
+
+
+61. distinct쓰면 null값 2개 이상있을 때 1개는 나온다.
+
+
+62. left outer join이라고 쓰면 왼쪽 table에 +붙는 효과임
+
+
+63.
+create table test(a int, b in t default 10);
+insert into test values(1, null);
+insert into test values(1, default)
+default값을 선언하면 null을 넣었을 때 null값을 사용한다.
+
+
+64. trigger 예제
+:new는 새로 들어온 tuple
+
+create or replace trigger my_trigger
+before insert on test
+for each row
+BEGIN
+  if :new.b <= 5 then
+     raise_application_error(-20001, 'ERROR!! b column value is invalid!');
+  end if;
+END;
+
+create or replace trigger my_trigger2
+before insert on test2
+for each row
+declare
+    cnt number;
+BEGIN
+  select count(*) into cnt from test where a = :new.c;
+  if cnt = 0 then 
+     raise_application_error(-20002, 'ERROR!! violation of referential integiry!!');
+  end if;
+END;
+
+
+65. tree traversal(deductive logics) <- 연역적 사고
+- tree: hierarchial structure, lineage
+- graph: map in car navigation
+
+SELECT [LEVEL], column, expr... <- level keyword사용 가능
+FROM   table
+[WHERE condition(s)]
+[START WITH condition(s)] <- 시작 튜플
+[CONNECT BY PRIOR condition(s)]; <- 방향성 지정
+
+SELECT ename || 'reports to' || PRIOR ename "Walk"
+FROM   emp
+START WITH ename = 'KING'
+CONNECT BY PRIOR empno = mgr
+
+select의 prior ename -> 직전의 사람 이름
+현재 empno를 mgr로 가지는 사람
+(이전)empno -> (다음)mgr
+(top down using the emp table
+column1(왼쪽) = parent key (위에 있음)
+column2(오른쪽) = child key (아래에 있음))
+
+
+66. level pseudocolumn(얼마나 떨어져있는지)
+level ->얼마나 떨어져있는지
+lpad(' ', 3* level - 3) <- 개수만큼 패딩넣어준다.
+||는 값들을 합쳐준다.
+
+
+67.pruning branches
+ename != 'SCOTT'을
+where에 쓰면 값만 지워지지만
+connect by 에 사용하면 pruning된다.
+
+
+68. recursive
+WITH RECURSIVE ancestor(name,aname) AS(
+	SELECT name, father
+	FROM parent
+	UNION
+	SELECT p.name, a.aname
+	FROM parent p, ancestor a <- 자기 자신을 recursive하게 사용
+	WHERE p.father= a.name 
+)
+SELECT *
+FROM ancestor;
+
+
+68. data cube(multiple aggregation: multi-level & multi-dimension)
+- group by -> 1D, single level aggregation
+- 차원 줄임 -> roll-up
+- 반대 -> drill-down
+
+
+69. cube, rollup
+SELECT model, year, color, sum(amount)
+FROM sales
+GROUP BY CUBE(mode, year, color);
+모든 값을 쫓아가면서 group by해준다.
+
+SELECT job, deptno, sum(sal)
+FROM emp
+GROUP BY ROLLUP(deptno,job);
+순서에 따라서 deptno, job group by, deptno group by해준다.
+
+
+70. grouping function
+null인지 grouping한건지 헷갈린다.
+SELECT deptno, job, sum(sal), grouping(job) as T1
+FROM emp
+GROUP BY cube(deptno, job);
+
+
+71. pivot(cross-tab)
+SELECT *
+FROM (SalesTable PIVOT(Sales for Month IN (‘Jan’,’Feb’,’Mar’))
+month를 세로축으로 사용하고 sales값을 뽑아라
+
+
+72. analytic functions <- 비교편하게
+- group by로 넘어온 값들을 partitioning, order, windowing한다.
+- analytic은 select에서만 사용 가능하다.
+- aggregate함수 사용 가능
+
+73. ordering
+SELECT EMPNO, ENAME, SAL, RANK() OVER( ORDER BY SAL DESC) AS RANK
+FROM EMP
+내림차순으로 정렬 desc
+
+74. partition by
+SELECT DEPTNO, EMPNO, ENAME, SAL,RANK() OVER( PARTITION BY DEPTNO ORDER BY SAL DESC) AS DEPT_RANK
+FROM EMP
+ORDER BY DEPTNO
+deptno에 대해 partition으로 나누고 거기서order를 구한다.
+rank <= 10을 where에 쓰면 rank10까지구함
+
+
+75. rank종류
+rank -> 같은 값은 같은 등수를 가지고, 그 다음값은 사람 수에 따른다.
+dense_rank -> 같은 값은 같은 등수를 가지고, 항상 모든숫자를 훑는다.
+row_number -> 그냥 위에서 부터 차례대로 등수를 매긴다.
+
+null값은 가장 높은 값으로 취급한다.(항상 1등)
+OVER(ORDER BY COMM DESC NULLS LAST) AS RANK
+이러면 null이 가장 나중에 옴
+
+
+76. aggregates as analytic functions
+avg(sal) over() -> 전체 sal의 평균값을 구한다.
+avg(sal) over(partition by deptno) -> 각 부서의 sal의 평균값을 구한다.
+
+
+77. percentiles
+SELECT PERCENTILE_CONT(0.5) WITHIN GROUP(ORDER BY SAL) AS MEDIAN_C,
+          PERCENTILE_DISC(0.5) WITHIN GROUP(ORDER BY SAL) AS MEDIAN_D
+FROM EMP
+percentile_cont -> 만약 2값이 존재할 경우 그 2값을 평균낸다.
+percentile_disc -> 가장 가까운값이나 랜덤적인 값을 선택
+
+
+78. percent_rank
+PERCENT_RANK(2500) WITHIN GROUP (ORDER BY sal)
+2500이 백분율 몇퍼에 해당하는지(아래있을수록 높아짐)
+
+SELECT DEPTNO, ENAME, SAL,PERCENT_RANK() OVER (PARTITION BY DEPTNO ORDER BY SAL ASC) as PR
+FROM emp
+ORDER BY DEPTNO, SAL;
+
+
+79. ntile -> ntile내부의 수로 나누었을 때 rank(위쪽이 더 많은 값을 가짐)
+SELECT EMPNO, ENAME, SAL,
+NTILE(2) OVER(ORDER BY SAL DESC)  AS NTILE2,
+NTILE(4) OVER(ORDER BY SAL DESC)  AS NTILE4,
+NTILE(10) OVER(ORDER BY SAL DESC) AS NTILE10
+FROM   EMP;
+
+
+80. windowing
+ordering을 전제로 한다. 범위를 정하고, 계산한다.
+SELECT EMPNO, ENAME, SAL, SUM(SAL) OVER(ORDER BY EMPNO
+	ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS ACC_SAL
+FROM   EMP
+-> rows between(windowing을 사용한다.)
+range(rows between 대신 사용하고, 값을 비교하여 사용한다.)
+unbounded 끝까지 preceding 위
+current row -> 현재 row
+following -> 뒤에
+
+SUM(SAL) OVER( ORDER BY SAL )를 쓰면
+default로 처음부터 현재row까지 더해진 값을 내놓는다.
+
+
+81. data mining applications
+market analysis and amanagement
+fraud detection and management
+risk analysis and management
+sports
+
+
+82. frequent itemset
+a priori property -> 어떤 set이 frequent하려면, subset들이 항상 frequent해야된다.
+
+
+83. association rules
+X -> Y
+
+
+84. frequent itemset oracle
+-- DBMS_FREQUENT_ITEMSET.FI_TRANSACTIONAL (                            --
+--	tranx_cursor		IN	SYSREFCURSOR,                  --
+--	support_threshold	IN	NUMBER,                        --
+--	itemset_length_min	IN	NUMBER,                        --
+--	itemset_length_max	IN	NUMBER,                        --
+--	including_items		IN	SYS_REFCURSOR DEFAULT NULL,    --
+--	excluding_items		IN	SYS_REFCURSOR DEFAULT NULL)    -- 
+--                                                                     --
+-- RETURN TABLE OF ROW (                                               --
+--      itemset [Nested Table of Item Type DERIVED FROM tranx_cursor], --
+--	support		NUMBER,					       --
+--	length		NUMBER,					       --
+--	total_tranx	NUMBER);
+
+select cast(itemset as fi_num) itemset, support, length, total_tranx
+from table(dbms_frequent_itemset.fi_transactional(
+               cursor(select cust_id, prod_id
+                      from sales),
+               (5000/7059),
+	       2,
+	       5,
+	       null,
+	       null)
+	)
+
+
+85. cast decode함수
+cast(itemset as fi_num)->숫자로 나타내라
+decode(grouping(deptno),0,to_char(deptno), 'all')
+->grouping(deptno) = 0이면 그냥숫자
+grouping(deptno) = 1이면 group된것이므로 all로 만듬
+
+
+@ view의 장점
+테이블 전체를 grant하는 대신, selection, projection, join, aggregation 등을 사용한 뷰를 생성하고 이를 grant함으로써 (1점) 
+content-based (2점) / flexible security policy (2점)를 가능케 함
+
+@ primart key의 index
+Table T1에 대해 새로운 tuple insertion시에, entity integrity 보장을 위해 동일 key 값을 가진 튜플이 이미 존재하는지 빨리 판단해야함. 이를 위해 PK 인덱스 사용
+T1을 reference하는 Foreign Key가 선언될 경우, child table에 새로운 tuple t1 insertion시 referential integrity 만족 여부를 위해 parent table T1에 t1’s FK 값을 PK로 갖는 튜플이 존재하는 지 빨리 판단할 수 있어야 함. 이를 위해 T1’s PK 인덱스 사용.
+
+
+correlation -> exists
+
+
+group by는 single level aggregation밖에 못한다.
+유저는 sub totoals나 totals를 모두 구할 수 있다.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

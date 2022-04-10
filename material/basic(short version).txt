@@ -1,0 +1,49 @@
+-- SQLITE Installation fro Window OS 
+-- 1. DOWNLOAD sqlite-tools-win32-x86-3140100.zip from http://sqlite.org/download.html
+-- 2. UNZIP 
+
+-- 1. Choose "Open New COMMAND Window(명령어창)" after clicking "SHIFT KEY" and "Right Mouse Button" together
+-- 2. Execute "sqlite3 test.db"
+
+.help
+.headers on
+.exp on
+
+DROP TABLE DEPT;
+CREATE TABLE DEPT
+       (DEPTNO NUMBER(2) PRIMARY KEY,
+	DNAME VARCHAR(14),
+	LOC VARCHAR(13) ) ;
+
+INSERT INTO DEPT VALUES (10,'ACCOUNTING','NEW YORK');
+INSERT INTO DEPT VALUES (20,'RESEARCH','DALLAS');
+INSERT INTO DEPT VALUES (30,'SALES','CHICAGO');
+INSERT INTO DEPT VALUES (40,'OPERATIONS','BOSTON');
+
+----------------------------------
+-- autocommit vs. begin/commit; --
+----------------------------------
+
+INSERT INTO DEPT VALUES (50,'TEST','SOMEWHERE');
+
+BEGIN; 
+INSERT INTO DEPT VALUES (60, 'TEST2', 'SOMEWHERE2');
+-- NOTE: temporary journal file is created!
+COMMIT; 
+-- NOTE: journal file is removed! 
+
+-------------------------
+-- Concurrency control --
+-------------------------
+BEGIN; 
+INSERT INTO DEPT VALUES (70, 'TEST2', 'SOMEWHERE2');
+
+-- Open New CMD Window and then  run the following transaction .. 
+BEGIN;
+INSERT INTO DEPT VALUES (80, 'TEST2', 'SOMEWHERE2');
+-- Why error?
+-- Why error? lock granularity = file
+
+.exit
+
+-- INSERT INTO EMP VALUES (8888,'SIMON','SECURITY GUARD',7902,date('1980-12-17'),800,NULL,60);

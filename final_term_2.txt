@@ -1,0 +1,102 @@
+1. Recovery Manager guarantees Atomicity & Durability
+
+
+2. 
+Transaction failure -> undo recovery
+System failure -> redo/ undo recovery
+Media failure -> archive recovery
+
+
+3. Three assumption
+page: 쓰는 최소 단위
+in place update: 그 physical 페이지에 그대로 쓴다.
+atomic propagation: atomic하게 쓴다.
+
+
+4. force at commit
+commit되는 순간 강제적으로 Disk에 쓴다.
+
+- No force(Durability 보장이 힘들다.)
+commit했을 때, 안쓰여졌을 경우, redo를 해줘야 한다.
+
+
+5. No-Steal
+commit하기 전까지는 disk에 절대 쓰지 않는다.
+
+- steal(Atomicity보장이 힘들다)
+이상적이지만
+system이 abort가 났을 때, physical memory에 덮어씌워졌을 수도 있으므로
+undoing을 보장해야 한다.
+
+
+6. Force log at commit: redo recovery를 위해 commit되었을 때 강제로 log에 쓴다.
+
+
+7. Write-Ahead Log(WAL) (for undo recovery)
+
+
+8. Redo나 Undo 정보를 log에 기록한다.
+<XID, pageID, offset, length, old data, new data>
+
+
+9. LSN: log sequence number
+
+
+10. physical, logical, physio-logical log
+physical -> table, index모두 undo log를 남긴다. (insert가 들어올 시)
+logical -> inset, A, r로 남긴다.(복구가 쉽지 않아 사용힘듬)
+physio-logical log -> table, index별로 logical한 record를 남긴다.
+
+
+11. WAL protocol
+어떤 page를 disk에 쓰기 전에 log buffer에서 undo log를 log device에다가 써야된다.
+
+
+12. log force at commit
+commit record를 log buffer에 추가하고 redo log를 log device에 한번에 써준다.
+log만 넘겨주면 되므로 실행속도가 상당히 빠르다.
+
+
+13. fsync()를써야지 commit을 했을 때 durability가 완전히 보장된다.
+
+
+14. checkpointing: disk에 주기적으로 flush를 해줌으로써
+crash가 났을 때 복구하는 시간을 줄여준다.
+
+
+15. SQLite
+simple, mobile에서 자주 사용된다. 복잡한 logic을 사용하지 않는다.
+commit할 때 force정책을 사용하고
+buffer에서 쫓아낼 때 steal정책을 사용한다.
+
+commit할 때, force정책을 사용하므로, 중간에 crash나면 복구힘들다.
+그러므로 journal file에 쓰고, 원래 physical한 공간에 옮겨쓴다. (atomicity보장)
+그러면 crash가 나도 journal file에 남아있으니 괜찮다.
+journal file에 쓰다가 crash가 나면 그냥 다 날려버리면 된다.
+
+거의 혼자 사용하므로 file단위로 lock을 잡는다.
+
+매문장이 하나의 transaction이다. begin commit이 없을 경우
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,196 @@
+-- Copyright(c) SKKU VLDB Lab. & SOS 2005. All Rights Reserved.
+-- Ch 13. example.sql
+
+conn scott/tiger
+
+drop table test;
+
+create table test (a int, b int, c varchar2(650));
+
+BEGIN
+    FOR i IN 1..100 LOOP
+        FOR j IN 1..1000 LOOP
+            INSERT INTO TEST (a, b, c) values ((i-1)*1000+j, j, rpad('X', 650, 'X'));
+        END LOOP;
+    END LOOP;
+END;
+/ 
+
+-- block size: 8K, 10 tuples per block ==> 10000 blocks(= 80M)
+
+analyze table test compute statistics;
+
+set lines 100;
+set pages 100;
+
+select table_name, tablespace_name, blocks, pct_free, avg_row_len, avg_space
+from user_tables
+where table_name = 'TEST';
+
+-------------------------
+-- 13.1 Why Sorting ?  -- 
+------------------------
+set autot on;
+
+-------------------------------------------------------------------------------------------
+-- Note: the hash-based aggregation has been additionally supported since Oracle 10g Rel2. 
+-------------------------------------------------------------------------------------------
+-- In Oracle10gRel2 or later ; turn off new sorting algorithm just for the easy illustration. 
+
+alter session set optimizer_features_enable = '9.2.0';
+alter session set "_newsort_enabled"=FALSE;
+ALTER SESSION SET "_gby_hash_aggregation_enabled" = FALSE;
+
+-- 1. explicit order by
+select a
+from test
+where b between 1 and 10
+order by a;
+
+select *
+from test
+where a between 1 and 1000
+order by a;
+
+-- 2. distinct 
+select distinct a
+from test
+where b between 1 and 10;
+
+-- 3. group by
+select a, min(b)
+from test
+where a between 1 and 10
+group by a;
+
+select max(bb)
+from 	(select a, min(b) as bb
+	from test
+ 	group by a
+ 	) tt;
+
+-- 4. sort-merge join
+-- remind the example in Chapter 12
+-- How to specify optimizer hint in Oracle
+-- http://download.oracle.com/docs/cd/B14117_01/server.101/b10752/hintsref.htm#5664
+select /*+ use_merge(e d) */ *
+from emp e, dept d
+where e.deptno = d.deptno; 
+
+-- INDEX Creation 
+-- create TEST_IDX_A/TEST_IDX_B 
+create index test_idx_a on test(a);
+create index test_idx_b on test(b);
+
+analyze index test_idx_a compute statistics;
+analyze index test_idx_b compute statistics;
+
+conn / as sysdba
+grant select on user_indexes to scott;
+conn scott/tiger;
+
+select blevel, leaf_blocks, distinct_keys, avg_leaf_blocks_per_key, avg_data_blocks_per_key, clustering_factor, last_analyzed
+from user_indexes 
+where index_name in ('TEST_IDX_A', 'TEST_IDX_B');
+
+-- SORTING-related Oracle parameters 
+-- Since Oracle9i, automatic memory management is supported for 
+-- sorting, hashing, and bitmap operations!
+-- <for example>
+-- "conn / as sysdba"
+-- "alter system set workarea_size_policy = {manual | auto};""
+
+conn / as sysdba;
+show parameter sort_area_size;
+-- Oracle assigns fixed size of memory area for sorting 
+-- to each connected session (Note: only under manual mode)
+
+-- SORTING: example
+-- with MANUAL mode
+conn / as sysdba;
+alter system set workarea_size_policy = manual;
+
+conn scott/tiger;
+alter session set sort_area_size = 656000;
+
+set linesize 1000;
+
+set autot traceonly;
+
+select *
+from test
+where a between 1 and 500
+order by b;
+-- in-memory sort: 1
+-- 500 * 660 byte = 330K < sort_area_size
+
+select *
+from test
+where a between 1 and 1000
+order by b;
+
+select *
+from test
+where a between 1 and 1000
+order by a;
+-- external disk sort: 1
+-- 1000 * 660 = 660k > sort_area_size
+
+select a,b
+from test
+where a between 1 and 1000
+order by b;
+-- in-memory sorting: why?
+-- note "a,b", instead of *, in the select clause
+
+-- enlarge sort_area_size manually
+alter session set sort_area_size = 1200000;
+
+select *
+from test
+where a between 1 and 1000
+order by b;
+-- now, in-memory sort!!
+
+select *
+from test
+where a between 1 and 1000
+order by a;
+-- sort elimination!! Why??
+
+-------------------------------
+-- 13.5 Sorting vs. B+ Index -- 
+------------------------------
+analyze table test compute statistics for all indexed columns;
+
+select *
+from test t
+where a between 1 and 1000
+order by a;
+
+select /*+ full(t) */ *
+from test t
+where a between 1 and 1000
+order by a;
+
+-- Note that test_idx_a is well clustered
+select *
+from test t
+where a between 1 and 10000
+order by a;
+
+select /*+ full(t) */ *
+from test t
+where a between 1 and 10000
+order by a;
+
+-- What about badly clustered index?
+select *
+from test t
+where b between 1 and 100
+order by b;
+
+select /*+ index(t) */ *
+from test t
+where b between 1 and 100
+order by b;
